@@ -84,6 +84,7 @@ body:not([data-s=menu]) #wbw,body:not([data-s=menu]) #mtop,body:not([data-s=menu
   <div id="mtop"><div class="chip">🪙 <b id="b1">0</b></div><div class="chip">🏆 <b id="bst">0</b></div><div class="chip"><img id="rk1" class="rk" alt=""> <b id="b3">0</b></div></div></div>
 <div class="panel hide" id="pf"><h2 data-i="nFr"></h2>
   <p data-i="frP"></p>
+  <p data-i="refBonus"></p>
   <input id="rl" readonly>
   <div class="row"><button id="sh" data-i="share"></button><button id="cp" class="alt" data-i="copy"></button></div>
   <p><span data-i="invited"></span> <b id="rc">0</b></p><small id="rn"></small></div>
@@ -161,9 +162,16 @@ async function api(path,body){if(!API||!tg)return null;try{const r=await fetch(A
 function renderFr(){
  const l=refLink();$('rl').value=l||T('noLink');
  $('sh').disabled=$('cp').disabled=!l;$('rc').textContent=refCount;
- $('rn').textContent=API?'':T('noApi')}
-(async()=>{if(invitedBy&&invitedBy!==String(tuid)&&!ls.get('pp_inv')){ls.set('pp_inv',invitedBy);await api('/referral',{ref:invitedBy})}
- const r=await api('/stats');if(r&&typeof r.count==='number'){refCount=r.count;ls.set('pp_refs',refCount);renderFr()}})();
+ $('rn').textContent=API?refMsg:T('noApi')}
+let refMsg='';
+async function syncRefs(){
+ if(invitedBy&&invitedBy!==String(tuid)&&!ls.get('pp_inv')){ls.set('pp_inv',invitedBy);await api('/referral',{ref:invitedBy})}
+ const r=await api('/stats');if(!r||typeof r.count!=='number')return;
+ refCount=r.count;ls.set('pp_refs',refCount);
+ if(r.pending>0){const c=await api('/claim');
+  if(c&&c.coins>0){bal+=c.coins;saveStats();updBal();refMsg=T('refGot')+' +'+c.coins+' 🪙';buzz('medium')}}
+ renderFr()}
+syncRefs();
 $('sh').onclick=e=>{e.stopPropagation();const u='https://t.me/share/url?url='+encodeURIComponent(refLink())+'&text='+encodeURIComponent(T('shareTxt'));
  try{tg&&tg.openTelegramLink?tg.openTelegramLink(u):window.open(u,'_blank')}catch(x){}};
 $('cp').onclick=async e=>{e.stopPropagation();try{await navigator.clipboard.writeText(refLink())}catch(x){$('rl').select();document.execCommand('copy')}
@@ -257,6 +265,7 @@ const DICT={"ru": {"title": "Бумажный пилот", "intro": "Держи 
 Object.assign(DICT.ru,{"tk_ch": "Подписаться на канал", "tk_chat": "Вступить в чат", "tk_bot": "Запустить бота", "go": "Перейти", "check": "Проверить", "tkWait": "Сначала перейдите по ссылке и подождите пару секунд.", "tkNo": "Подписка не найдена. Подпишитесь и попробуйте снова."});Object.assign(DICT.en,{"tk_ch": "Subscribe to the channel", "tk_chat": "Join the chat", "tk_bot": "Launch the bot", "go": "Go", "check": "Check", "tkWait": "Open the link first and wait a few seconds.", "tkNo": "Subscription not found. Subscribe and try again."});Object.assign(DICT.uk,{"tk_ch": "Підписатися на канал", "tk_chat": "Вступити в чат", "tk_bot": "Запустити бота", "go": "Перейти", "check": "Перевірити", "tkWait": "Спочатку перейдіть за посиланням і зачекайте кілька секунд.", "tkNo": "Підписку не знайдено. Підпишіться й спробуйте знову."});Object.assign(DICT.es,{"tk_ch": "Suscribirse al canal", "tk_chat": "Unirse al chat", "tk_bot": "Iniciar el bot", "go": "Ir", "check": "Comprobar", "tkWait": "Abre primero el enlace y espera unos segundos.", "tkNo": "No se encontró la suscripción. Suscríbete e inténtalo de nuevo."});
 Object.assign(DICT.ru,{"wheelT": "Колесо фортуны", "wFree": "Крутить бесплатно", "wPaid": "Крутить за", "wIn": "Бесплатно через", "won": "Выигрыш:"});Object.assign(DICT.en,{"wheelT": "Wheel of Fortune", "wFree": "Spin for free", "wPaid": "Spin for", "wIn": "Free spin in", "won": "You won:"});Object.assign(DICT.uk,{"wheelT": "Колесо фортуни", "wFree": "Крутити безкоштовно", "wPaid": "Крутити за", "wIn": "Безкоштовно через", "won": "Виграш:"});Object.assign(DICT.es,{"wheelT": "Rueda de la fortuna", "wFree": "Girar gratis", "wPaid": "Girar por", "wIn": "Gratis en", "won": "Premio:"});
 Object.assign(DICT.ru,{"tk_token": "Запустить токен"});Object.assign(DICT.en,{"tk_token": "Launch a token"});Object.assign(DICT.uk,{"tk_token": "Запустити токен"});Object.assign(DICT.es,{"tk_token": "Lanzar un token"});
+Object.assign(DICT.ru,{"refBonus": "За каждого друга: +1000 🪙, если у него Telegram Premium, и +500 🪙, если нет.", "refGot": "Начислено за друзей:"});Object.assign(DICT.en,{"refBonus": "For each friend: +1000 🪙 if they have Telegram Premium, +500 🪙 if not.", "refGot": "Friend rewards credited:"});Object.assign(DICT.uk,{"refBonus": "За кожного друга: +1000 🪙, якщо в нього Telegram Premium, і +500 🪙, якщо ні.", "refGot": "Нараховано за друзів:"});Object.assign(DICT.es,{"refBonus": "Por cada amigo: +1000 🪙 si tiene Telegram Premium y +500 🪙 si no.", "refGot": "Recompensa por amigos:"});
 const LMAP={ru:'ru',be:'ru',kk:'ru',uk:'uk',es:'es',en:'en'};
 let lang=ls.get('pp_lang');
 if(!DICT[lang]){const lc=String((tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.language_code)||navigator.language||'en').slice(0,2).toLowerCase();lang=LMAP[lc]||'en'}
@@ -319,7 +328,7 @@ const PANELS={friends:'pf',tasks:'pt',wd:'pd',wheel:'pwh'};
 function go(s){scr=s;$('lm').classList.add('hide');document.body.dataset.s=s;
  ['pf','pt','pd','pwh'].forEach(id=>$(id).classList.toggle('hide',id!==PANELS[s]));
  $('ov').classList.toggle('hide',!(s==='game'&&st!=='play'));
- if(s==='friends')renderFr();if(s==='tasks')renderTasks();if(s==='wd')renderWd();if(s==='wheel'){drawWheel();wUi()}
+ if(s==='friends'){renderFr();syncRefs()}if(s==='tasks')renderTasks();if(s==='wd')renderWd();if(s==='wheel'){drawWheel();wUi()}
  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===s))}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=e=>{e.stopPropagation();go(b.dataset.s)});
 $('home').onclick=e=>{e.stopPropagation();go('menu')};
